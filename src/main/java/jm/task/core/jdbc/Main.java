@@ -31,8 +31,7 @@ public class Main {
         select.stream().forEach(System.out::println);
 
         service.cleanUsersTable();
-        System.out.println("таблица очищена");
+
         service.dropUsersTable();
-        System.out.println("таблица удалена");
     }
 }
