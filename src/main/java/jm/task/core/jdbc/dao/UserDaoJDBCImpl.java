@@ -19,8 +19,10 @@ public class UserDaoJDBCImpl implements UserDao {
                     "constraint table1_pk primary key (id))";
             PreparedStatement preparedStatement = Util.connection.prepareStatement(sqlQuery);
             preparedStatement.executeUpdate();
+            Util.connection.commit();
         } catch (SQLException e) {
             try {
+                Util.connection.rollback();
                 Util.connection.close();
             } catch (SQLException ex) {
                 throw new RuntimeException(ex);
@@ -34,8 +36,10 @@ public class UserDaoJDBCImpl implements UserDao {
             String sqlQuery = "drop table if exists " + Util.dbName + "." + Util.dbTableName;
             PreparedStatement preparedStatement = Util.connection.prepareStatement(sqlQuery);
             preparedStatement.executeUpdate();
+            Util.connection.commit();
         } catch (SQLException e) {
             try {
+                Util.connection.rollback();
                 Util.connection.close();
             } catch (SQLException ex) {
                 throw new RuntimeException(ex);
@@ -46,7 +50,6 @@ public class UserDaoJDBCImpl implements UserDao {
 
     public void saveUser(String name, String lastName, byte age) {
         try {
-            Util.connection.setAutoCommit(false);
             String sqlQuery = "INSERT INTO " + Util.dbName + "." + Util.dbTableName
                     + " (name, last_name, age) VALUES (?, ?, ?)";
             PreparedStatement preparedStatement = Util.connection.prepareStatement(sqlQuery);
@@ -55,7 +58,6 @@ public class UserDaoJDBCImpl implements UserDao {
             preparedStatement.setInt(3, age);
             preparedStatement.executeUpdate();
             Util.connection.commit();
-            Util.connection.setAutoCommit(true);
         } catch (SQLException e) {
             try {
                 Util.connection.rollback();
@@ -69,13 +71,11 @@ public class UserDaoJDBCImpl implements UserDao {
 
     public void removeUserById(long id) {
         try {
-            Util.connection.setAutoCommit(false);
             String sqlQuery = "DELETE FROM " + Util.dbName + "." + Util.dbTableName + " WHERE id = ?";
             PreparedStatement preparedStatement = Util.connection.prepareStatement(sqlQuery);
             preparedStatement.setLong(1, id);
             preparedStatement.executeUpdate();
             Util.connection.commit();
-            Util.connection.setAutoCommit(true);
         } catch (SQLException e) {
             try {
                 Util.connection.rollback();
@@ -90,6 +90,7 @@ public class UserDaoJDBCImpl implements UserDao {
     public List<User> getAllUsers() {
         List<User> userList = new ArrayList<>();
         try {
+            Util.connection.setAutoCommit(true);
             String sqlQuery = "SELECT * FROM " + Util.dbName + "." + Util.dbTableName;
             PreparedStatement preparedStatement = Util.connection.prepareStatement(sqlQuery);
             ResultSet rs = preparedStatement.executeQuery();
@@ -98,6 +99,7 @@ public class UserDaoJDBCImpl implements UserDao {
                 user.setId(rs.getLong(1));
                 userList.add(user);
             }
+            Util.connection.setAutoCommit(false);
         } catch (SQLException e) {
             try {
                 Util.connection.close();
@@ -111,12 +113,10 @@ public class UserDaoJDBCImpl implements UserDao {
 
     public void cleanUsersTable() {
         try {
-            Util.connection.setAutoCommit(false);
             String sqlQuery = "DELETE FROM " + Util.dbName + "." + Util.dbTableName;
             PreparedStatement preparedStatement = Util.connection.prepareStatement(sqlQuery);
             preparedStatement.execute();
             Util.connection.commit();
-            Util.connection.setAutoCommit(true);
         } catch (SQLException e) {
             try {
                 Util.connection.rollback();

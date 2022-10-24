@@ -16,7 +16,9 @@ public class Util {
 
     private static Connection getConnection() {
         try {
-            return DriverManager.getConnection(dbUrlConnection, dbUserName, dbUserPassword);
+            Connection connection = DriverManager.getConnection(dbUrlConnection, dbUserName, dbUserPassword);
+            connection.setAutoCommit(false);
+            return connection;
         } catch (SQLException e) {
             System.out.println("Error connect with database");
             throw new RuntimeException(e);
