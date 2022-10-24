@@ -3,10 +3,7 @@ package jm.task.core.jdbc.dao;
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,106 +13,118 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     public void createUsersTable() {
-        Util util = new Util();
-        try (
-                Connection connection = util.getConnection();
-                Statement statement = connection.createStatement()
-        ) {
-            String sqlQueryCreateTable =
-                    "create table if not exists " + util.getDbName() + "." + util.getDbTableName() + " (" +
-                            "id bigint auto_increment, name text, last_name text, age integer, " +
-                            "constraint table1_pk primary key (id)" +
-                            ")";
-            statement.execute(sqlQueryCreateTable);
-
+        try {
+            String sqlQuery = "create table if not exists " + Util.dbName + "." + Util.dbTableName +
+                    "(id bigint auto_increment, name text, last_name text, age integer, " +
+                    "constraint table1_pk primary key (id))";
+            PreparedStatement preparedStatement = Util.connection.prepareStatement(sqlQuery);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            System.out.println("Error creating the table");
-            throw new RuntimeException(e);
+            try {
+                Util.connection.close();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+            throw new RuntimeException("Error creating the table");
         }
     }
 
     public void dropUsersTable() {
-        Util util = new Util();
-        try (
-                Connection connection = util.getConnection();
-                Statement statement = connection.createStatement()
-        ) {
-            String sqlQueryCreateTable =
-                    "drop table if exists " + util.getDbName() + "." + util.getDbTableName();
-            statement.execute(sqlQueryCreateTable);
-
+        try {
+            String sqlQuery = "drop table if exists " + Util.dbName + "." + Util.dbTableName;
+            PreparedStatement preparedStatement = Util.connection.prepareStatement(sqlQuery);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            System.out.println("Error when deleting a table");
-            throw new RuntimeException(e);
+            try {
+                Util.connection.close();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+            throw new RuntimeException("Error when deleting a table");
         }
     }
 
     public void saveUser(String name, String lastName, byte age) {
-        Util util = new Util();
-        try (
-                Connection connection = util.getConnection();
-                Statement statement = connection.createStatement()
-        ) {
-            String sqlQueryCreateTable = "INSERT INTO " + util.getDbName() + "." + util.getDbTableName()
-                    + " (name, last_name, age) VALUES ('" + name + "', '" + lastName + "', " + age + ")";
-            statement.execute(sqlQueryCreateTable);
-
+        try {
+            Util.connection.setAutoCommit(false);
+            String sqlQuery = "INSERT INTO " + Util.dbName + "." + Util.dbTableName
+                    + " (name, last_name, age) VALUES (?, ?, ?)";
+            PreparedStatement preparedStatement = Util.connection.prepareStatement(sqlQuery);
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, lastName);
+            preparedStatement.setInt(3, age);
+            preparedStatement.executeUpdate();
+            Util.connection.commit();
+            Util.connection.setAutoCommit(true);
         } catch (SQLException e) {
-            System.out.println("Error when adding a record to the table");
-            throw new RuntimeException(e);
+            try {
+                Util.connection.rollback();
+                Util.connection.close();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+            throw new RuntimeException("Error when adding a record to the table");
         }
     }
 
     public void removeUserById(long id) {
-        Util util = new Util();
-        try (
-                Connection connection = util.getConnection();
-                Statement statement = connection.createStatement()
-        ) {
-            String sqlQueryCreateTable = "DELETE FROM " + util.getDbName() + "." + util.getDbTableName()
-                    + " WHERE id = " + id;
-            statement.execute(sqlQueryCreateTable);
-
+        try {
+            Util.connection.setAutoCommit(false);
+            String sqlQuery = "DELETE FROM " + Util.dbName + "." + Util.dbTableName + " WHERE id = ?";
+            PreparedStatement preparedStatement = Util.connection.prepareStatement(sqlQuery);
+            preparedStatement.setLong(1, id);
+            preparedStatement.executeUpdate();
+            Util.connection.commit();
+            Util.connection.setAutoCommit(true);
         } catch (SQLException e) {
-            System.out.println("Error when deleting a record from a table");
-            throw new RuntimeException(e);
+            try {
+                Util.connection.rollback();
+                Util.connection.close();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+            throw new RuntimeException("Error when deleting a record from a table");
         }
     }
 
     public List<User> getAllUsers() {
         List<User> userList = new ArrayList<>();
-        Util util = new Util();
-        try (
-                Connection connection = util.getConnection();
-                Statement statement = connection.createStatement()
-        ) {
-            String sqlQueryCreateTable = "SELECT * FROM " + util.getDbName() + "." + util.getDbTableName();
-            ResultSet rs = statement.executeQuery(sqlQueryCreateTable);
+        try {
+            String sqlQuery = "SELECT * FROM " + Util.dbName + "." + Util.dbTableName;
+            PreparedStatement preparedStatement = Util.connection.prepareStatement(sqlQuery);
+            ResultSet rs = preparedStatement.executeQuery();
             while (rs.next()) {
                 User user = new User(rs.getString(2), rs.getString(3), rs.getByte(4));
                 user.setId(rs.getLong(1));
                 userList.add(user);
             }
         } catch (SQLException e) {
-            System.out.println("Error when select from table");
-            throw new RuntimeException(e);
+            try {
+                Util.connection.close();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+            throw new RuntimeException("Error when select from table");
         }
-
         return userList;
     }
 
     public void cleanUsersTable() {
-        Util util = new Util();
-        try (
-                Connection connection = util.getConnection();
-                Statement statement = connection.createStatement()
-        ) {
-            String sqlQueryCreateTable = "DELETE FROM " + util.getDbName() + "." + util.getDbTableName();
-            statement.execute(sqlQueryCreateTable);
-
+        try {
+            Util.connection.setAutoCommit(false);
+            String sqlQuery = "DELETE FROM " + Util.dbName + "." + Util.dbTableName;
+            PreparedStatement preparedStatement = Util.connection.prepareStatement(sqlQuery);
+            preparedStatement.execute();
+            Util.connection.commit();
+            Util.connection.setAutoCommit(true);
         } catch (SQLException e) {
-            System.out.println("Error when deleting a record from a table");
-            throw new RuntimeException(e);
+            try {
+                Util.connection.rollback();
+                Util.connection.close();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+            throw new RuntimeException("Error when deleting a record from a table");
         }
     }
 }
