@@ -34,7 +34,7 @@ public class Util {
             .addAnnotatedClass(User.class)
             .buildSessionFactory();
 
-    private static Properties getPropertiesSessionFactory() {
+    public static Properties getPropertiesSessionFactory() {
         Properties properties = new Properties();
         properties.setProperty("hibernate.connection.url", dbUrlConnection);
         properties.setProperty("dialect", "org.hibernate.dialect.MySQL8Dialect");
